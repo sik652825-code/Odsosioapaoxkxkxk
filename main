@@ -78,7 +78,7 @@ async def update_user_count():
     while True:
         try:
             await bot.set_my_description(
-                description=f"🎮 KRASTU METROSHOP"
+                description=f"🎮 KRASTU METRO SHOP"
             )
             logger.info("✅ Профиль бота обновлен.")
         except Exception as e:
@@ -90,7 +90,7 @@ async def update_user_count():
 async def start_command(message: types.Message):
     if message.chat.type in ["group", "supergroup"]: return
 
-    # ВОЗВРАЩЕНО ВАШЕ ОРИГИНАЛЬНОЕ ПРИВЕТСТВИЕ
+    # ИСПРАВЛЕННОЕ ПРИВЕТСТВИЕ
     welcome_text = (
         "👋 Добро пожаловать в KRASTU METRO SHOP!\n\n"
         "Здесь можно посмотреть товары по игре METRO ROYALE, "
@@ -116,7 +116,6 @@ async def start_command(message: types.Message):
 async def support_menu(message: types.Message):
     if message.chat.type in ["group", "supergroup"]: return
     
-    # ВАШ ТЕКСТ И ВАША КАРТИНКА
     text = (
         "🔥 Доступные сопровождения которые можно преобрести:\n\n"
         "✅ В каждом сопровождении идет ф6 с мк вк + все вещи с типов.\n\n"
@@ -139,7 +138,6 @@ async def support_menu(message: types.Message):
 async def items_menu(message: types.Message):
     if message.chat.type in ["group", "supergroup"]: return
     
-    # ВАШ ТЕКСТ
     text = "🛒 Актуальные товары которые в наличии:"
     await message.answer(text, reply_markup=get_items_keyboard())
 
@@ -303,11 +301,11 @@ async def unknown_command(message: types.Message, state: FSMContext):
 
 # ------------------ ЗАПУСК БОТА ------------------
 async def main():
-    logger.info("🚀 Бот запускается...")
+    logger.info("🚀 Бот KRASTU METRO SHOP запускается...")
     await bot.delete_webhook(drop_pending_updates=True)
     
     await bot.set_my_name(name=f"KRASTU SHOP BOT")
-    await bot.set_my_description(description=f"🎮 KRASTU METROSHOP")
+    await bot.set_my_description(description=f"🎮 KRASTU METRO SHOP")
     logger.info("✅ Профиль настроен.")
 
     asyncio.create_task(update_user_count())
