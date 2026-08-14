@@ -1,0 +1,323 @@
+import asyncio
+import logging
+from datetime import datetime
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.state import State, StatesGroup 
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import (
+    InlineKeyboardMarkup, InlineKeyboardButton, 
+    KeyboardButton, ReplyKeyboardMarkup,
+    URLInputFile
+)
+
+# ------------------ КОНФИГУРАЦИЯ ------------------
+BOT_TOKEN = "8131107672:AAEGzYo914v7rER3c2sx0hnWFu5r-ttfUI4"
+OWNER_ID = 8365786708  # ID владельца
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Инициализация
+storage = MemoryStorage()
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(storage=storage)
+
+# ------------------ МАШИНА СОСТОЯНИЙ (FSM) ------------------
+class SupportStates(StatesGroup):
+    waiting_for_problem = State()
+
+# ------------------ КЛАВИАТУРЫ (КНОПКИ) ------------------
+def get_main_keyboard():
+    keyboard = [
+        [KeyboardButton(text="🏷️ СОПРОВОЖДЕНИЯ")],
+        [KeyboardButton(text="🎁 ТОВАРЫ")],
+        [KeyboardButton(text="🤖 ПРИОБРЕСТИ БОТА")],
+        [KeyboardButton(text="🛠️ ПОДДЕРЖКА")]
+    ]
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard, 
+        resize_keyboard=True, 
+        one_time_keyboard=False,
+        input_field_placeholder="Выбери раздел..."
+    )
+
+def get_support_keyboard():
+    keyboard = [
+        [InlineKeyboardButton(text="🔰 Сопр 7 карта 5кк | 100₽", callback_data="support_100")],
+        [InlineKeyboardButton(text="🔰 Сопр 7 карта 7кк | 150₽", callback_data="support_150")],
+        [InlineKeyboardButton(text="🔰 Сопр 7 карта 10кк | 200₽", callback_data="support_200")],
+        [InlineKeyboardButton(text="🔰 Сопр 7 карта 20кк | 399₽", callback_data="support_399")],
+        [InlineKeyboardButton(text="🔰 Сопр 7 карта 25кк | 450₽", callback_data="support_450")],
+        [InlineKeyboardButton(text="🔰 Сопр 7 карта 50кк | 900₽", callback_data="support_900")],
+        [InlineKeyboardButton(text="◀️ В меню", callback_data="back_to_main")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def get_items_keyboard():
+    keyboard = [
+        [InlineKeyboardButton(text="🎯 ф6 с мк вк | 25₽", callback_data="item_f6")],
+        [InlineKeyboardButton(text="◀️ В меню", callback_data="back_to_main")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def get_payment_keyboard():
+    keyboard = [
+        [InlineKeyboardButton(text="💳 Подтвердить покупку", callback_data="payment")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_support")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+# ------------------ АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ СТРОКИ ПОД НАЗВАНИЕМ ------------------
+async def update_user_count():
+    while True:
+        try:
+            await bot.set_my_description(
+                description=f"🎮 KRASTU METROSHOP"
+            )
+            logger.info("✅ Профиль бота обновлен.")
+        except Exception as e:
+            logger.error(f"Ошибка обновления описания: {e}")
+        await asyncio.sleep(600)
+
+# ------------------ ОСНОВНЫЕ ОБРАБОТЧИКИ ------------------
+@dp.message(Command("start"))
+async def start_command(message: types.Message):
+    if message.chat.type in ["group", "supergroup"]: return
+
+    # ВОЗВРАЩЕНО ВАШЕ ОРИГИНАЛЬНОЕ ПРИВЕТСТВИЕ
+    welcome_text = (
+        "👋 Добро пожаловать в KABAN RENT!\n\n"
+        "Здесь можно посмотреть товары по игре METRO ROYALE, "
+        "чтобы посмотреть товар смотрите кнопки ниже.\n\n"
+        f"🕐 Текущее время: {datetime.now().strftime('%H:%M:%S')}"
+    )
+    
+    photo_url = "https://i.ibb.co/rKVDHDJz/IMG-2391.jpg"
+    
+    try:
+        await message.answer_photo(
+            photo=URLInputFile(photo_url),
+            caption=welcome_text,
+            reply_markup=get_main_keyboard()
+        )
+    except Exception as e:
+        logger.error(f"Ошибка отправки фото: {e}")
+        await message.answer(welcome_text, reply_markup=get_main_keyboard())
+        
+    logger.info(f"Пользователь {message.from_user.id} запустил бота")
+
+@dp.message(F.text == "🏷️ СОПРОВОЖДЕНИЯ")
+async def support_menu(message: types.Message):
+    if message.chat.type in ["group", "supergroup"]: return
+    
+    # ВАШ ТЕКСТ И ВАША КАРТИНКА
+    text = (
+        "🔥 Доступные сопровождения которые можно преобрести:\n\n"
+        "✅ В каждом сопровождении идет ф6 с мк вк + все вещи с типов.\n\n"
+        "⬇️ Выбирай ниже:"
+    )
+    
+    photo_url = "https://i.ibb.co/jP4MhYLH/IMG-2402.jpg"
+    
+    try:
+        await message.answer_photo(
+            photo=URLInputFile(photo_url),
+            caption=text,
+            reply_markup=get_support_keyboard()
+        )
+    except Exception as e:
+        logger.error(f"Ошибка отправки фото сопровождений: {e}")
+        await message.answer(text, reply_markup=get_support_keyboard())
+
+@dp.message(F.text == "🎁 ТОВАРЫ")
+async def items_menu(message: types.Message):
+    if message.chat.type in ["group", "supergroup"]: return
+    
+    # ВАШ ТЕКСТ
+    text = "🛒 Актуальные товары которые в наличии:"
+    await message.answer(text, reply_markup=get_items_keyboard())
+
+@dp.message(F.text == "🤖 ПРИОБРЕСТИ БОТА")
+async def buy_bot(message: types.Message):
+    if message.chat.type in ["group", "supergroup"]: return
+    text = (
+        "💼 Нужен такой же бот под свой магазин?\n\n"
+        "📩 Пиши разработчику: @sikvvg"
+    )
+    await message.answer(text, reply_markup=get_main_keyboard())
+
+@dp.message(F.text == "🛠️ ПОДДЕРЖКА")
+async def support_chat(message: types.Message, state: FSMContext):
+    if message.chat.type in ["group", "supergroup"]: return
+    await state.set_state(SupportStates.waiting_for_problem)
+    text = "📬 Опиши свою ситуацию, я передам админу. Он скоро ответит."
+    await message.answer(text, reply_markup=get_main_keyboard())
+
+@dp.message(StateFilter(SupportStates.waiting_for_problem))
+async def handle_support_message(message: types.Message, state: FSMContext):
+    try:
+        user_info = (
+            f"👤 @{message.from_user.username or 'Нет ника'}\n"
+            f"🆔 ID: {message.from_user.id}\n"
+            f"📅 Время: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\n"
+            f"💬 Сообщение:\n\n{message.text}"
+        )
+        await bot.send_message(OWNER_ID, f"🆕 В ПОДДЕРЖКУ:\n\n{user_info}")
+        await message.answer("✅ Отправил. Жди ответа.")
+        await state.clear()
+    except Exception as e:
+        logger.error(f"Ошибка пересылки: {e}")
+        await message.answer("❌ Что-то пошло не так. Попробуй позже.")
+        await state.clear()
+
+# ------------------ СИСТЕМА ОТОБРАЖЕНИЯ СОПРОВОЖДЕНИЙ ------------------
+@dp.callback_query(lambda c: c.data and c.data.startswith("support_"))
+async def support_callback(callback: types.CallbackQuery):
+    try:
+        price = callback.data.split("_")[1]
+        
+        support_items = {
+            "100": {
+                "name": "Сопр 7 карта 5кк",
+                "image": "https://i.ibb.co/fGXm6DVn/IMG-2396.jpg"
+            },
+            "150": {
+                "name": "Сопр 7 карта 7кк",
+                "image": "https://i.ibb.co/LDQvzRh6/IMG-2394.jpg"
+            },
+            "200": {
+                "name": "Сопр 7 карта 10кк",
+                "image": "https://i.ibb.co/TDCDxS5B/IMG-2398.jpg"
+            },
+            "399": {
+                "name": "Сопр 7 карта 20кк",
+                "image": "https://i.ibb.co/DDfq2jDD/IMG-2395.jpg"
+            },
+            "450": {
+                "name": "Сопр 7 карта 25кк",
+                "image": "https://i.ibb.co/TDCDxS5B/IMG-2398.jpg"
+            },
+            "900": {
+                "name": "Сопр 7 карта 50кк",
+                "image": "https://i.ibb.co/TDCDxS5B/IMG-2398.jpg"
+            }
+        }
+        
+        item = support_items.get(price)
+        if not item:
+            await callback.answer("Ошибка", show_alert=True)
+            return
+            
+        text = (
+            f"🏆 {item['name']}\n"
+            f"💵 Цена: {price}₽\n\n"
+            "🎁 Бонус: ф6 с мк вк + все вещи с типов.\n\n"
+            "⬇️ Нажимай «Подтвердить покупку»."
+        )
+        
+        await callback.message.delete()
+        await callback.message.answer_photo(
+            photo=URLInputFile(item['image']),
+            caption=text,
+            reply_markup=get_payment_keyboard()
+        )
+        await callback.answer()
+        
+    except Exception as e:
+        logger.error(f"Ошибка в support_callback: {e}")
+        await callback.answer("⚠️ Ошибка", show_alert=True)
+
+# ------------------ СИСТЕМА ОПЛАТЫ (БЕТА-ТЕСТ) ------------------
+@dp.callback_query(lambda c: c.data == "payment")
+async def payment_callback(callback: types.CallbackQuery):
+    await callback.answer(
+        "⏳ Сейчас оплата отключена.\n"
+        "Бот на тестовом периоде, скоро запустим.",
+        show_alert=True
+    )
+    await callback.message.edit_caption(
+        caption="🔒 Оплата пока не работает, бот на бете.\nВернись чуть позже.",
+        reply_markup=get_support_keyboard()
+    )
+    logger.info(f"Пользователь {callback.from_user.id} пытался оплатить (БЕТА)")
+
+# ------------------ INLINE НАВИГАЦИЯ ------------------
+@dp.callback_query(lambda c: c.data == "back_to_main")
+async def back_to_main(callback: types.CallbackQuery):
+    await callback.message.delete()
+    await callback.message.answer("🏠 Главное меню.", reply_markup=get_main_keyboard())
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "back_to_support")
+async def back_to_support(callback: types.CallbackQuery):
+    text = (
+        "🔥 Доступные сопровождения которые можно преобрести:\n\n"
+        "✅ В каждом сопровождении идет ф6 с мк вк + все вещи с типов.\n\n"
+        "⬇️ Выбирай ниже:"
+    )
+    photo_url = "https://i.ibb.co/jP4MhYLH/IMG-2402.jpg"
+    
+    await callback.message.delete()
+    try:
+        await callback.message.answer_photo(
+            photo=URLInputFile(photo_url),
+            caption=text,
+            reply_markup=get_support_keyboard()
+        )
+    except Exception as e:
+        logger.error(f"Ошибка отправки фото при возврате: {e}")
+        await callback.message.answer(text, reply_markup=get_support_keyboard())
+    await callback.answer()
+
+@dp.callback_query(lambda c: c.data == "item_f6")
+async def item_f6_callback(callback: types.CallbackQuery):
+    text = (
+        "🎯 ф6 с мк вк\n"
+        "💵 Цена: 25₽\n\n"
+        "⏳ Пока не продается, бот на бете.\n"
+        "📩 Напиши в поддержку, если срочно."
+    )
+    await callback.message.edit_text(text)
+    await callback.answer()
+
+# ------------------ ЛОВУШКА ДЛЯ СООБЩЕНИЙ ------------------
+@dp.message()
+async def unknown_command(message: types.Message, state: FSMContext):
+    if message.chat.type in ["group", "supergroup"]:
+        return
+
+    current_state = await state.get_state()
+    if current_state == SupportStates.waiting_for_problem:
+        await handle_support_message(message, state)
+    else:
+        await message.answer(
+            "❌ Я не знаю такой команды.\nПользуйся кнопками снизу.",
+            reply_markup=get_main_keyboard()
+        )
+
+# ------------------ ЗАПУСК БОТА ------------------
+async def main():
+    logger.info("🚀 Бот запускается...")
+    await bot.delete_webhook(drop_pending_updates=True)
+    
+    await bot.set_my_name(name=f"KRASTU SHOP BOT")
+    await bot.set_my_description(description=f"🎮 KRASTU METROSHOP")
+    logger.info("✅ Профиль настроен.")
+
+    asyncio.create_task(update_user_count())
+
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Бот выключен.")
+    except Exception as e:
+        logger.error(f"Критическая ошибка: {e}")
