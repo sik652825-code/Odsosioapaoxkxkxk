@@ -92,7 +92,7 @@ async def start_command(message: types.Message):
 
     # ВОЗВРАЩЕНО ВАШЕ ОРИГИНАЛЬНОЕ ПРИВЕТСТВИЕ
     welcome_text = (
-        "👋 Добро пожаловать в KABAN RENT!\n\n"
+        "👋 Добро пожаловать в KRASTU METRO SHOP!\n\n"
         "Здесь можно посмотреть товары по игре METRO ROYALE, "
         "чтобы посмотреть товар смотрите кнопки ниже.\n\n"
         f"🕐 Текущее время: {datetime.now().strftime('%H:%M:%S')}"
